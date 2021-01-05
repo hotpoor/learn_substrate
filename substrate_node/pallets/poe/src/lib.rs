@@ -42,6 +42,7 @@ pub trait Trait: frame_system::Trait {
 	// // https://substrate.dev/docs/en/knowledgebase/runtime/storage#create-bounds
 	// type MaxLength: Get<usize>;
 
+	// type MaxLength:Get<usize>;
 
 
 }
@@ -88,6 +89,7 @@ decl_error! {
         NoSuchProof,
         /// The proof is claimed by another account, so caller can't revoke it.
         NotProofOwner,
+		NotOkProof,
 	}
 }
 
@@ -149,6 +151,13 @@ decl_module! {
 
             // Verify that the specified proof has not already been claimed.
             ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
+
+
+			let mxl = 3;
+			let nowlen = &proof.len();
+			println!("len:{}",nowlen);
+			ensure!(nowlen<&mxl, Error::<T>::NotOkProof);
+
 
             // Get the block number from the FRAME System module.
             let current_block = <frame_system::Module<T>>::block_number();

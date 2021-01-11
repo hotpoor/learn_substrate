@@ -19,6 +19,9 @@ parameter_types! {
 	pub const MaximumBlockWeight: Weight = 1024;
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+	// pub const MaxLength: u8 = 50;
+
+	pub const MaxClaimLength: u32 = 3;
 }
 
 impl system::Trait for Test {
@@ -47,10 +50,12 @@ impl system::Trait for Test {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
+	// type MaxLength = u8;
 }
 
 impl Trait for Test {
 	type Event = ();
+	type MaxClaimLength = MaxClaimLength;
 }
 
 pub type PoeModule = Module<Test>;

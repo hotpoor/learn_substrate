@@ -4,8 +4,17 @@
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// https://substrate.dev/docs/en/knowledgebase/runtime/frame
 
-use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, traits::Get,ensure,StorageMap};
-use frame_system::ensure_signed;
+use frame_support::{
+	decl_module,
+	decl_storage,
+	decl_event,
+	decl_error,
+	dispatch,
+	ensure,
+	traits::Get,
+	StorageMap,
+};
+use frame_system::{self as system,ensure_signed};
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -42,7 +51,8 @@ pub trait Trait: frame_system::Trait {
 	// // https://substrate.dev/docs/en/knowledgebase/runtime/storage#create-bounds
 	// type MaxLength: Get<usize>;
 
-	// type MaxLength:Get<usize>;
+	// 附加题答案
+	type MaxClaimLength: Get<u32>;
 
 
 }
@@ -90,6 +100,11 @@ decl_error! {
         /// The proof is claimed by another account, so caller can't revoke it.
         NotProofOwner,
 		NotOkProof,
+
+		ProofAlreadyExist,
+		ClaimNotExist,
+		NotClaimOwner,
+		ProofTooLong,
 	}
 }
 
@@ -150,14 +165,10 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             // Verify that the specified proof has not already been claimed.
-            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
+            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyExist);
 
-
-			let mxl = 3;
-			let nowlen = &proof.len();
-			println!("len:{}",nowlen);
-			ensure!(nowlen<&mxl, Error::<T>::NotOkProof);
-
+			// 第二题答案
+			ensure!(T::MaxClaimLength::get() >= proof.len() as u32, Error::<T>::ProofTooLong);
 
             // Get the block number from the FRAME System module.
             let current_block = <frame_system::Module<T>>::block_number();
@@ -178,13 +189,13 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             // Verify that the specified proof has been claimed.
-            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::NoSuchProof);
+            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::ClaimNotExist);
 
             // Get owner of the claim.
             let (owner, _) = Proofs::<T>::get(&proof);
 
             // Verify that sender of the current call is the claim owner.
-            ensure!(sender == owner, Error::<T>::NotProofOwner);
+            ensure!(sender == owner, Error::<T>::NotClaimOwner);
 
             // Remove claim from storage.
             Proofs::<T>::remove(&proof);
@@ -200,17 +211,16 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             // Verify that the specified proof has been claimed.
-            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::NoSuchProof);
+            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::ClaimNotExist);
 
             // Get owner of the claim.
             let (owner, _) = Proofs::<T>::get(&proof);
 
             // Verify that sender of the current call is the claim owner.
-            ensure!(sender == owner, Error::<T>::NotProofOwner);
+            ensure!(sender == owner, Error::<T>::NotClaimOwner);
 
             Proofs::<T>::insert(&proof, (&dest, frame_system::Module::<T>::block_number()));
-
-            Ok(())
+			Ok(())
         }
 	}
 }
